@@ -70,12 +70,16 @@ func handleConnection(conn net.Conn) {
 		return
 	}
 
-	fmt.Println("Received user", msg.User)
-	fmt.Println(`'test -r ` + msg.Path + `'`)
+	// Check that msg.Path is a path that exists
+	if _, err := os.Stat(msg.Path); err != nil {
+		fmt.Println("Error validating path:", err)
+		return
+	}
 
 	// system call to check if the user has access to the path
 	// Execute the system command "test" to check if the user has access to the path
-	cmd := exec.Command("su", msg.User, "-c", "test -r "+msg.Path)
+	// TODO: Toggle read/write check as optional input
+	cmd := exec.Command("su", msg.User, "-c", "test -w "+msg.Path)
 	out, _ := cmd.CombinedOutput()
 
 	var response Response
@@ -86,7 +90,9 @@ func handleConnection(conn net.Conn) {
 	if cmd.ProcessState.ExitCode() != 0 {
 		response.HasAccess = false
 		fmt.Println("User does not have access to", msg.Path)
-		fmt.Println("Output:", string(out))
+		if len(out) > 0 {
+			fmt.Println("Output:", string(out))
+		}
 	} else {
 		response.HasAccess = true
 		fmt.Println("User has access to", msg.Path)

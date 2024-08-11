@@ -4,6 +4,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"net"
+	"os"
+	"path/filepath"
 )
 
 type Message struct {
@@ -29,9 +31,20 @@ func main() {
 	}
 	defer conn.Close()
 
+	// Get User and Path values from command line arguments
+	user := os.Args[1]
+	path := os.Args[2]
+
+	// Normalize the path
+	absPath, err := filepath.Abs(path)
+	if err != nil {
+		fmt.Println("Error getting absolute path:", err)
+		return
+	}
+
 	msg := Message{
-		User: "testuser",
-		Path: "/home/mstack/go/src/github.com/mstackhouse/verify/testfile.txt",
+		User: user,
+		Path: absPath,
 	}
 
 	encoder := json.NewEncoder(conn)
